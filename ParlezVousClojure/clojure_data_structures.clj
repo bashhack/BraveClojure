@@ -139,3 +139,79 @@
 
 ; ------------------------------------------------------------------------------
 ; Lists
+
+;; Lists are similar to vectors, however their performance characterists differ, such that:
+
+;; 1) You cannot use the 'get' method to retrieve elements, you instead use 'nth'
+
+'(6 6 6) ; => the single-quote here is significant when creating a list literal
+(nth '(6 6 6) 2)
+; => 6 (at 2-index)
+
+;; NOTE: Using nth is slower than 'get' because Clojure traverses all n elements to get to target nth value
+
+;; 2) Vectors are great for quick, indexed random access, lists provide linear access via sequential scan
+
+;; 3) Lists are easier to modify at head and/or tail and are less expensive to modify than vectors at the
+;; expense of the O(n) time required vs a vectors effectively constant time of O(1)
+
+;; 4) Like vectors, lists can be operated on by the 'conj' function, but elements are inserted at the start
+
+(clojure.string/join (conj '("yes I'm a cannonball") "Well I'm an animal, "))
+; => "Well I'm an animal, yes I'm a cannonball"
+
+
+;; NOTE (to self):
+;; The question: When do I use a list and when do I use a vector?
+;; The answer:
+;; If I need to easily add items to the beginning of the sequence, or if I am writing a macro
+;; I should use a list. Otherwise, I should be using a vector.
+
+
+; ------------------------------------------------------------------------------
+; Sets
+
+;; Sets are collections of unique values. Clojure has two kinds of sets:
+;; hash sets (more common)
+;; sorted sets
+
+;; Examples
+#{"I'm made of metal, my circuits gleam" 666 :judas-priest}
+(hash-set 6 6 6)
+; => #{6}
+;; NOTE: Sets are unique values, so if an attempt to create a set with repeating values
+;; were done, a set with only a single instance of the repeated value would be created
+
+(conj #{:most-metal-number :second-most-metal-number} :most-metal-number)
+; => #{:most-metal-number :second-most-metal-number}
+
+;; To create a set, we can use the 'set' function:
+(set [6 3 9]) ; => or, using a list literal (set '(6 3 9))
+; => #{6 3 9}
+
+;; An important tool in working with sets is checking membership, we can do this
+;; with 'get' or using the keyword (just like we were able to do with maps, lists and vectors)
+
+;; Maps
+(get {:rock "For those about to..." :on "...my mark, get set, rock!"} :on)
+(:on {:rock "For those about to..." :on "...my mark, get set, rock!"})
+({:rock "For those about to..." :on "...my mark, get set, rock!"} :on)
+; => all return "...my mark, get set, rock!"
+
+;; Vectors
+(get [{:rock "for those about to..."}] 0) ; => {:rock "for those about to..."}
+([6 666 6] 1) ; => 666
+(nth [666 666 6] 2) ; => 6
+
+;; Lists
+(nth '(666 666 6) 0) ; => 666
+
+;; While we could use the methods above on our set, there's some questionable
+;; return values possible ... looking at you, 'nil'...so it's best to use the
+;; 'contains?' function which will like 'empty?' or 'nil?' return a boolean or a keyword
+
+(contains? #{:slayer :anthrax :janes-addiction} :mandolin) ; => false, obviously, because mandolins aren't metal enough \m/
+
+(:amon-amarth #{:amon-amarth :glittertind :korpiklaani :tyr}) ; => :amon-amarth
+
+(get #{:punk :metal} :metal) ; => :metal
