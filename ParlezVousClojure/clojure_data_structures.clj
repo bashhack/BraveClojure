@@ -63,5 +63,79 @@
 ({:who-is-bad-to-the-bone "George Thoroughgood"} :who-is-bad-to-the-bone)
 ; => "George Thoroughgood
 
-; -------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; Keywords
+
+;; NOTE (to self): I've been overthinking 'keywords' in Clojure,
+;; wondering if they were sometimes acting as symbols - however,
+;; it appears that they really are just signifiers for map keys
+
+;; Per the Clojure documentation, keywords are:
+
+;; "symbolic identifiers that evaluate to themselves, providing very fast equality tests"
+
+;; Whereas, symbols are:
+
+;; "identifiers that are normally used to refer to something else. They can be used
+;; in programs to refer to function parameters, let bindings, class names and global vars..."
+
+;; Further, we might think of using keywords as lightwieght "constant strings" for the keys of a hash-map
+;; or the dispatch values of a multimethod
+
+;; Symbols, then, are generally used to name variables and functions and it's less common to
+;; manipulate them as objects directyl except in macros.
+
+;; Examples
+:doom
+:black
+:death
+:speed
+:progressive
+:symphonic
+
+;; As we saw with the built-in 'get' method, a keyword can be used to lookup a value in a data structure
+(get {:bat "meatloaf" :out "mashed potatoes" :of "green peas" :hell "ketchup"} :bat)
+; => "meatloaf"
+
+;; However, we can write this more succinctly because we're using keywords:
+(:bat {:bat "meatloaf" :out "mashed potatoes" :of "green peas" :hell "ketchup"})
+  ; => "meatloaf"
+
+;; We could also provide a default value, just like we did with the 'get' method (on line 57)
+(:ozzy {:bat "meatloaf" :out "mashed potatoes" :of "green peas" :hell "ketchup"} "Wrong bat")
+; => "Wrong bat"
+
+;; NOTE (to self): Try to utilizie the keyword as a function method over the 'get,' where appropriate!
+
+; ------------------------------------------------------------------------------
+; Vectors
+
+;; A vector is similar to an array, in that it's a 0-indexed data structure
+
+;; As with all other Clojure data structures, vectors, too, are immutable and persistent
+
+[6 6 6]
+
+(get [6 6 6] 12) ; => nil (no element at index 12)
+(get [6 6 6] 0) ; => 6 (element found at 0th index)
+(get-in [6 "six" {:most-metal-number {:num 666}}] [2 :most-metal-number :num])
+; => {:most-metal-number {:num 666}}
+
+;; NOTE: In the above, I combined index-based positioning with the 'get-in' method
+;; which I discovered was applicable to both maps and vectors (that is, any nested
+;; associative data structure). In reviewing the docs, it seems that the 'list'
+;; data structure would not work, because it is not associative. Using the nested
+;; properties of a vector, I supplied my argument as a vector containing '2' to grab the
+;; element at the 2-index, and then supplied two keywords (':most-metal-number' and
+;; ':num') to get the inner value of the nested hash-map at the 2-index
+
+;; To create a vector, use the 'vector' function, passing n-values
+(vector "like" "a" "rainbow" "in" "the")
+; => ["like" "a" "rainbow" "in" "the"]
+
+;; To add additional elements to a vector (IMPORTANT: added to the end!!!), use 'conj' function
+(conj ["like" "a" "rainbow" "in" "the"] "dark")
+; => [ "like" "a" "rainbow" "in" "the" "dark"]
+
+; ------------------------------------------------------------------------------
+; Lists
