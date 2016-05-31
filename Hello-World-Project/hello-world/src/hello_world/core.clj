@@ -1,4 +1,4 @@
-(ns first-clojure-project.core
+(ns hello-world.core
   (:gen-class))
 
 (defn -main
@@ -20,12 +20,11 @@
 ;; ArityException Wrong number of args (0) passed to: core/map clojure.lang.AFn.throwArity (Afn.java:429)
 
 ;; Using Evil Lispy
-(+ 1 (+ 2 3) 4)
+;; (+ 1 (+ 2 3) 4)
 
 ;; Using Paredit - after fixing user.el, works like a charm with Evil mode! Huzzah!
-(+ 1 2 3 (* 4 5) 6)
+;; (+ 1 2 3 (* 4 5) 6)
 
 ;; More editing using Paredit
-(* (/ 2 4 6 (- 1 (+ 3 5)) 42 24) 10 (* 9 8 7))
-
-(+ 1 (2) (* 3 4) 5 6 (- 7 8 9) 10)
+;; (* (/ 2 4 6 (- 1 (+ 3 5)) 42 24) 10 (* 9 8 7))
+;; (+ 1 (2) (* 3 4) 5 6 (- 7 8 9) 10)
