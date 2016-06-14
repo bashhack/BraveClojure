@@ -10,7 +10,7 @@
 ; library. If you find the exercises too difficult, revisit them after reading
 ; Chapters 4 and 5—you’ll find them much easier."
 
-; (1) Use the str, vector, list, hash-map, and hash-set functions.
+; (1) Use the `str`, `vector`, `list`, `hash-map`, and `hash-set` functions.
 
 ; (2) Write a function that takes a number and adds 100 to it.
 
@@ -20,16 +20,16 @@
 (dec9 10)
 ; => 1
 
-; (4) Write a function, mapset, that works like map
+; (4) Write a function, `mapset`, that works like `map`
 ; except the return value is a set:
 (mapset inc [1 1 2 2])
 ; => #{2 3}
 
-; (5) Create a function that’s similar to symmetrize-body-parts except that it
+; (5) Create a function that’s similar to `symmetrize-body-parts` except that it
 ; has to work with weird space aliens with radial symmetry. Instead of two eyes,
 ; arms, legs, and so on, they have five.
 
-; (6) Create a function that generalizes symmetrize-body-parts and the function
+; (6) Create a function that generalizes `symmetrize-body-parts` and the function
 ; you created in Exercise 5. The new function should take a collection of body
 ; parts and the number of matching body parts to add. If you’re completely new
 ; to Lisp languages and functional programming, it probably won’t be obvious
