@@ -400,7 +400,7 @@ map(list, function (val) { return val + " mapped!"})
 
 (defn metal-fan-details
   [social-security-number]
-  (Thread/sleep 1000)
+  ;; (Thread/sleep 1000)
   (get concert-audience social-security-number))
 
 (defn polka-enthusiast?
@@ -418,5 +418,45 @@ map(list, function (val) { return val + " mapped!"})
 (time (metal-fan-details 0))
 ; => "Elapsed time: 1005.303124 msecs"
 ; => {:has-tattoos? false, :plays-accordian? false, :name "Angus Lars Anthrax"}
+
+;; Here, we haven't technically accessed the mapped element, so this
+;; should almost immediately return a value:
+(time (def mapped-metal-fan-details (map metal-fan-details (range 0 1000000))))
+; => "Elapsed time: 0.09592 msecs"
+; => #'user/mapped-metal-fan-details
+
+;; What just happened?
+;; Well, 'range returns a lazy seq consisting of the integers from 0 to 999,999.
+;; Then, map returns a lazy seq that is associated with the name
+;; mapped-metal-fan-details. Because map didn't actually apply metal-fan-details
+;; to any of the elements returned by range' the operation is near instant.
+
+;; This illustrates a truth about lazy seqs, that they are made up of two parts:
+;; (1) - the 'recipe' for how to realize the elements of a sequence, and
+;; (2) - the elements that have been realized so far
+
+;; In our example above, mapped-metal-fan-details is unrealized. Now, let's
+;; realize mapped-metal-fan-details by accessing one of its members.
+
+(time (first mapped-metal-fan-details))
+; => "Elapsed time: 32131.590707 msecs"
+; => {:has-tattoos? false, :plays-accordian? false, :name "Angus Lars Anthrax"}
+
+;; Why did it take 32 seconds, rather than 1 second?
+;; 'Clojure chunks its lazy sequences, which just means that whenever
+;; Clojure has to realize an element, it preemptively realizes some of the next
+;; elements as well. In this example, you wanted only the very first element
+;; of mapped-metal-fan-details, but Clojure went ahead and prepared the next 31
+;; as well. Clojure does this because it almost always results in better
+;; performance.'
+
+
+;; Now, let's call it again:
+(time (first mapped-metal-fan-details))
+; => "Elapsed time: 0.174635 msecs"
+; => {:has-tattoos? false, :plays-accordian? false, :name "Angus Lars Anthrax"}
+
+;; Wow! The second time we access the first element of mapped-metal-fan-details
+;; it's almost immediate.
 
 (time (identify-polka-enthusiast (range 0 1000000)))
