@@ -463,3 +463,143 @@ map(list, function (val) { return val + " mapped!"})
 
 ; ------------------------------------------------------------------------------
 ; Infinite Sequences
+
+;; Finally! - One of the best aspects of a lazy seq is our ability to work with
+;; and construct infinite sequences. One of the ways we can construct these
+;; infinite seqs is calling upon the 'repeat' function - creating a seq
+;; where every member is the arg passed to it.
+
+(concat (take 6 (repeat "oy")) ["'Cause I'm T.N.T. I'm dynamite!"])
+; => ("oy" "oy" "oy" "oy" "oy" "oy" "'Cause I'm T.N.T. I'm dynamite!")
+
+(take 3 (repeatedly (fn [] (rand-int 10))))
+; => (9 2 7)
+
+(defn even-numbers
+  ([] (even-numbers 0))
+  ([n] (cons n (lazy-seq (even-numbers (+ n 2))))))
+
+(take 10 (even-numbers))
+; => (0 2 4 6 8 10 12 14 16 18)
+
+;; cons vs conj (I confuse these being so new, so I needed a way to memorize):
+
+;; cons => 's' => adds x to the 's'tart of a seq
+(cons 0 '(2 4 6))
+; => (0 2 4 6)
+
+;; conj => 'j' => 'j'oins the existing seq and some xs
+(conj '(2 4 6) 8 10)
+; => (10 8 2 4 6)
+
+(conj [2 4 6] 8 10)
+; => [2 4 6 8 10]
+
+;; Note: Depending on the type, `conj` will con`join` the new xs to the seq
+;; in varying order, as shown above
+
+; ------------------------------------------------------------------------------
+; The Collection Abstraction
+
+;; Like the sequence abstraction we've been working with - there's another
+;; closely related abstraction known as the 'collection abstraction.' All of
+;; Clojure's core data structures take part in both abstractions.
+
+;; Just as we understood the sequence collection to be about operating on
+;; members individually, the collection abstraction is about operating on
+;; the data structure as a whole.
+
+;; Some examples of these 'whole collection' concerns include:
+;; - Count (count coll)
+;; - Empty? (empty? coll)
+;; - Every? (every? pred coll)
+;; - Into (into to from) (into to xform form)
+;; - Conj (conj coll x) (conj coll x & xs)
+;; ...et cetera...
+
+(empty? [])
+; => true
+
+(empty? ["metal"])
+; => false
+
+;; Let's explore 'into' and 'conj' in more depth!
+
+; into
+
+;; Into is doing the work of transforming, because so many seq
+;; functions return a seq rather than any original data structure,
+;; into is a great utility function that transforms the return value
+;; back into the original value
+
+(map identity {:favorite-guitar "Flying V"})
+; => ([:favorite-guitar "Flying V"])
+
+(into {} (map identity {:favorite-guitar "Flying V"}))
+; => {:favorite-guitar "Flying V"}
+
+;; We don't have to work with just maps, we can use other structures, as well:
+
+(map identity [:favorite-guitar-pedal :favorite-amplifier])
+; => (:favorite-guitar-pedal :favorite-amplifier)
+
+(into [] (map identity [:favorite-guitar-pedal :favorite-amplifier]))
+; => [:favorite-guitar-pedal :favorite-amplifier]
+
+;; Heck, we can even transform one data structure into another, entirely.
+;; Here, we'll map over a vector returning a seq and then transform
+;; this returned seq value into a set
+
+(map identity [:favorite-guitar-lick :favorite-guitar-lick])
+
+(into #{} (map identity [:favorite-guitar-lick :favorite-guitar-lick]))
+
+;; We can also add to a non-empty data structure:
+
+(into {:favorite-musical-scale "Phrygian"} [[:favorite-guitar-solo "Black Star"]])
+; => {:favorite-musical-scale "Phrygian" :favorite-guitar-solo "Black Star"}
+
+(into ["Gibson"] '("Fender" "Ibanez"))
+; => ["Gibson" "Fender" "Ibanez"]
+
+(into {:favorite-metal-city "Kopervik, Norway"} {:favorite-metal-pet "Dragon"
+                                                 :favorite-metal-moment "1980 Winter Olympics"})
+; => {:favorite-metal-city "Kopervik, Norway"
+; =>  :favorite-metal-pet "Dragon"
+; =>  :favorite-metal-moment "1980 Winter Olympics"}
+
+; conj
+
+;; We already looked at conj, but it's worth a second pass:
+
+(conj [6] [6])
+; => [6 [6]]
+
+(into [6] [6])
+; => [6 6]
+
+(conj [6] 6)
+; => [6 6]
+
+;; Notice here that conj takes a scalar value, whereas into takes a collection
+
+(conj [6] 6 6)
+; => [6 6 6]
+
+(conj {:time "the witching hour"} [:place "the halls of valhalla"])
+; => {:place "the halls of valhalla" :time "the witching hour"}
+
+;; There are obvious similarities here, so much so that we can write:
+(defn my-conj
+  [target & additions]
+  (into target additions))
+
+(my-conj [6] 6)
+; => [6 6]
+
+;; "This kind of pattern isn't that uncommon. You'll often see two functions
+;; that do the same thing, except one takes a rest param ('conj') and one takes
+;; a seqable data structure ('into')"
+
+; ------------------------------------------------------------------------------
+; Function Functions
