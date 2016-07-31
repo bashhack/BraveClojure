@@ -460,3 +460,6 @@ map(list, function (val) { return val + " mapped!"})
 ;; it's almost immediate.
 
 (time (identify-polka-enthusiast (range 0 1000000)))
+
+; ------------------------------------------------------------------------------
+; Infinite Sequences
