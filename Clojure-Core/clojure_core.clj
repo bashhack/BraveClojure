@@ -603,3 +603,132 @@ map(list, function (val) { return val + " mapped!"})
 
 ; ------------------------------------------------------------------------------
 ; Function Functions
+
+;; Let's explore functions that accept functions and return functions as values!
+;; This is very familiar to me, as a JavaScript dev, but I'm excited to see how
+;; Clojure handles these day-to-day necessities.
+
+; Apply (apply f args)
+; (apply f x args) (apply f x y args) (apply f x y z args) (apply f a b c d & args)
+
+;; "'apply' explodes a seqable data structure so it can be passed to a function
+;; that expects a rest parameter."
+
+;; Ex. max (max x) (max x y) (max x y & more)
+(max 0 1 2)
+; => 2
+
+(max [0 1 2])
+; => [0 1 2]
+
+(apply max [0 1 2])
+; => 2
+
+;; As before, where we created conj using into - here, we can create into
+;; by combining conj and apply
+
+(defn my-into
+  [target additions]
+  (apply conj target additions))
+
+(my-into [0] [1 2 3])
+; => [0 1 2 3]
+
+;; This is, again, equivalent to:
+(conj [0] 1 2 3)
+
+; Partial
+; (partial f) (partial f arg1) (partial f arg1 arg2)
+; (partial f arg1 arg2 arg3) (partial f arg1 arg2 arg3 & more)
+
+;; "Takes a function f and fewer than the normal arguments to f, and returns
+;; a fn that takes a variable number of additional args.
+;; When called, the return function calls f with args + additional args.
+
+;; The common example used to illustrate this across languages:
+(def add-metal-num (partial + 666))
+(add-metal-num 10)
+; => 676
+(add-metal-num 5)
+; => 671
+
+(def add-missing-band-members
+  (partial conj ["Lead Singer" "Guitarist" "Bassist" "Drummer"]))
+
+(add-missing-band-members "Keyboardist" "Technical Tambourine Artisan")
+; => ["Lead Singer" "Guitarist" "Bassist" "Drummer" "Keyboardist" "Technical Tambourine Artisan"]
+
+;; Partial function application can be tricky to visualize/understand, let's
+;; break it down further by implementing it ourselves:
+
+(defn my-partial
+  [partialized-fn & args]
+  (fn [& more-args]
+    (apply partialized-fn (into args more-args))))
+
+(def add10 (my-partial + 10))
+(add10 3)
+; => 13
+
+;; What's happening behind the scenes can be shown like this:
+(fn [& more-args]
+  (apply + (into [10] more-args)))
+
+;; We want to use partials when we are repeating "the same combination of
+;; function and arguments in many different contexts."
+
+(defn logger
+  [log-level message]
+  (condp = log-level
+    :warn (clojure.string/lower-case message)
+    :emergency (clojure.string/upper-case message)))
+
+(def warn (partial logger :warn))
+
+(warn "Are you ready to rock?")
+; "are you ready to rock?"
+
+;; These are identical: (warn "Are you ready to rock?") (logger :warn "Are you ready to rock?")
+
+;; Sometimes, we can make use of simple function decorators to increase the
+;; readabilty and clarity of our code.
+
+; Complement (complement f)
+; "Takes a fn f and returns a fn that takes the same args as f, with
+; the same effects, if any, and returns the opposite truth value
+
+;; Earlier, we identified the stray polka enthusiast in the crowd,
+;; how would we find the metalheads - with and without complement?
+
+;; Without...
+(defn identify-metalheads
+  [social-security-numbers]
+  (filter #(not (polka-enthusiast? %))
+          (map metal-fan-details social-security-numbers)))
+
+;; Now, with...
+(def not-polka-enthusiast? (complement polka-enthusiast?))
+(defn identify-metalheads
+  [social-security-numbers]
+  (filter not-polka-enthusiast?
+          (map metal-fan-details social-security-numbers)))
+
+;; Here's how we might implement our own complement:
+
+(defn my-complement
+  [fun]
+  (fn [& args]
+    (not (apply fun args))))
+
+(def my-pos? (my-complement neg?))
+
+(my-pos? 1)
+; => true
+
+(my-pos? -1)
+; => false
+
+; ------------------------------------------------------------------------------
+; A Data Analysis Program for the Big Government Entity
+
+;; See directory 'Big-Government-Data-Collection" for project
