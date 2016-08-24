@@ -264,5 +264,21 @@
   (some (comp not-empty (partial valid-moves board))
         (map first (filter #(get (second %) :pegged) board))))
 
+;;; Let's break this one down!
+
+;;; 1) `filter` is passed a map, `board`, and returns a seq
+;;;    of tuple vectors:
+;;;    ([1 {:connections {6 3, 4 2}, :pegged true}]
+;;;     [2 {:connections {9 5, 7 4}, :pegged true}])
+;;;
+;;; 2) the anonymous function is executed on the sequence
+;;;    which filters out any tuples/vectors where `pegged`
+;;;    is false and position does not house a peg
+;;;
+;;; 3) the result from the filter is passed to `map`, where
+;;;    `first` is called on each tuple, effectively grabbing
+;;;    only the position number (i.e., 1, 2)
+;;;
+
 ;;;; ---------------------------------------------------------------------------
 ;;;; ---------------------------------------------------------------------------
