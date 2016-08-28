@@ -1,4 +1,3 @@
-
 ;;;; ---------------------------------------------------------------------------
 ;;;; -------------------------   Peg Thing Game   ------------------------------
 ;;;; ---------------------------------------------------------------------------
@@ -13,15 +12,17 @@
 ;;;; ---------------------------------------------------------------------------
 ;;;; ---------------------------------------------------------------------------
 
-;; Define namespace for program, require namespace 'clojure.set' for easy
-;; access to utility fns it provides working with sets (difference, union, join,
-;; map-invert, etc.), and calling gen-class to run program from command line
+;;; Define namespace for program, require namespace 'clojure.set' for easy
+;;; access to utility fns it provides working with sets (difference, union, join,
+;;; map-invert, etc.), and calling gen-class to run program from command line
 
-;; (ns pegthing.core
-;;   (require [clojure.set :as set])
-;;   (:gen-class))
+(ns pegthing.core
+  (require [clojure.set :as set])
+  (:gen-class))
 
-;; We're going to end up with a data structure that should look like this:
+(declare successful-move prompt-move game-over prompt-rows)
+
+;;; We're going to end up with a data structure that should look like this:
 ;; {1 {:pegged true, :connections {6 3, 4 2}},
 ;;  2 {:pegged true, :connections {9 5, 7 4}},
 ;;  3 {:pegged true, :connections {10 6, 8 5}},
@@ -31,15 +32,16 @@
 ;;  15 {:pegged true, :connections {13 14, 6 10}},
 ;;  :rows 5}
 ;;
-;; ...where `:pegged` represents whether a peg is placed at that position,
-;; and `:connections` is a map where each key identifies a legal position and
-;; each value is the position which would be jumped over
+;;; ...where `:pegged` represents whether a peg is placed at that position,
+;;; and `:connections` is a map where each key identifies a legal position and
+;;; each value is the position which would be jumped over
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; Creating the Board
 ;;;; ---------------------------------------------------------------------------
 
-;; http://mathworld.wolfram.com/TriangularNumber.html
+;;; http://mathworld.wolfram.com/TriangularNumber.html
+
 (defn tri*
   "Generates lazy sequence of triangular numbers"
   ([] (tri* 0 1))
@@ -93,10 +95,15 @@
 ;; (row-tri 4)
 ; => 10
 
+(defn in-bounds?
+  "Is every position less than or equal the max position?"
+  [max-pos & positions]
+  (= max-pos (apply max max-pos positions)))
+
 (defn connect
   "Form a mutual connection between two positions"
   [board max-pos pos neighbor destination]
-  (if (<= destination max-pos)
+  (if (in-bounds? max-pos neighbor destination)
     (reduce (fn [new-board [p1 p2]]
               (assoc-in new-board [p1 :connections p2] neighbor))
             board
@@ -156,21 +163,21 @@
 ;  11 {:connections {4 7}},
 ;  13 {:connections {4 8}}}
 
-;; Our `add-pos` function, which utilizes reducing over functions
-;; is really another way of composing functions (see: `comp`)
+;;; Our `add-pos` function, which utilizes reducing over functions
+;;; is really another way of composing functions (see: `comp`)
 
-;; We could rewrite our previous string clean method:
+;;; We could rewrite our previous string clean method:
 
-; (require '[clojure.string :as s])
-; (defn clean
-;   [text]
-;   (s/replace (s/trim text) #"lol" "LOL"))
+;; (require '[clojure.string :as s])
+;; (defn clean
+;;   [text]
+;;   (s/replace (s/trim text) #"lol" "LOL"))
 ; => (clean "My boa constrictor is so sassy lol!  ")
 
-; (defn clean-reduced
-;   [text]
-;   (reduce (fn [string string-fn] (string-fn string))
-;           text
+;; (defn clean-reduced
+;;   [text]
+;;   (reduce (fn [string string-fn] (string-fn string))
+;;           text
 ;           [s/trim #(s/replace % #"lol" "LOL")]))
 
 (defn new-board
@@ -238,7 +245,7 @@
                        (pegged? board jumped)))
                 (get-in board [pos :connections]))))
 
-(def my-board (assoc-in (new-board 5) [4 :pegged] false))
+;; (def my-board (assoc-in (new-board 5) [4 :pegged] false))
 
 ;; (my-board 1)
 ; => {:pegged true, :connections {4 2, 6 3}}
@@ -279,6 +286,147 @@
 ;;;    `first` is called on each tuple, effectively grabbing
 ;;;    only the position number (i.e., 1, 2)
 ;;;
+;;; 4) a predicate function `(comp not-empty (partial-moves board))`
+;;;    is called for each position number returned in (3). Why do we
+;;;    use `partial` here? Well, it's because we're calling `valid-moves`
+;;;    with the same first param of `board` and a variable param of `pos`
+;;;    from the collection of position numbers returned from our map
+;;;    function.
+;;;
+;;; 5) finally, `some` returns the first true value from applying
+;;;    the predicate in (4) against the collection of position numbers
 
+;;;; ---------------------------------------------------------------------------
+;;;; Rendering and Printing the Board
+;;;; ---------------------------------------------------------------------------
+
+;;; Using Unicode charcodes, create alphabet
+
+(def alpha-start 97)
+(def alpha-end 123)
+(def letters (map (comp str char) (range alpha-start alpha-end)))
+(def pos-chars 3)
+
+(def ansi-styles
+  {:red "[31m"
+   :green "[32m"
+   :blue "[34m"
+   :reset "[0m"})
+
+(defn ansi
+  "Produce a string which will apply an ansi style"
+  [style]
+  (str \u001b (style ansi-styles)))
+
+(defn colorize
+  "Apply ansi color to text"
+  [text color]
+  (str (ansi color) text (ansi :reset)))
+
+(defn render-pos
+  [board pos]
+  (str (nth letters (dec pos))
+       (if (get-in board [pos :pegged])
+         (colorize "0" :blue)
+         (colorize "-" :red))))
+
+(defn row-positions
+  "Return all positions in the given row"
+  [row-num]
+  (range (inc (or (row-tri (dec row-num)) 0))
+         (inc (row-tri row-num))))
+
+(defn row-padding
+  "String of spaces to add to the beginning of a row to center it"
+  [row-num rows]
+  (let [pad-length (/ (* (- rows row-num) pos-chars) 2)]
+    (apply str (take pad-length (repeat " ")))))
+
+(defn render-row
+  [board row-num]
+  (str (row-padding row-num (:rows board))
+       (clojure.string/join " " (map (partial render-pos board)
+                                     (row-positions row-num)))))
+
+(defn print-board
+  [board]
+  (doseq [row-num (range 1 (inc (:rows board)))]
+    (println (render-row board row-num))))
+
+;;; Using `doseq` because of the side-effects involved: printing to terminal
+
+;;;; ---------------------------------------------------------------------------
+;;;; Player Interaction
+;;;; ---------------------------------------------------------------------------
+
+(defn letter->pos
+  "Converts a letter string to the corresponding position number"
+  [letter]
+  (inc (- (int (first letter)) alpha-start)))
+
+(defn get-input
+  "Waits for user to enter text and hit enter, then cleans the input"
+  ([] (get-input ""))
+  ([default]
+   (let [input (clojure.string/trim (read-line))]
+     (if (empty? input)
+       default
+       (clojure.string/lower-case input)))))
+
+(defn characters-as-strings
+  "Given a string, return a collection consisting of each individual character"
+  [string]
+  (re-seq #"[a-zA-Z]" string))
+
+(defn prompt-move
+  [board]
+  (println "\nHere's your board:")
+  (print-board board)
+  (println "Move from where to where? Enter two letters:")
+  (let [input (map letter->pos (characters-as-strings (get-input)))]
+    (if-let [new-board (make-move board (first input) (second input))]
+      (successful-move new-board)
+      (do
+        (println "\n!!! That was an invalid move :(\n")
+        (prompt-move board)))))
+
+(defn successful-move
+  [board]
+  (if (can-move? board)
+    (prompt-move board)
+    (game-over board)))
+
+(defn game-over
+  "Announce the game is over and prompt to play again"
+  [board]
+  (let [remaining-pegs (count (filter :pegged (vals board)))]
+    (println "Game over! You had" remaining-pegs "pegs left:")
+    (print-board board)
+    (println "Play again? y/n [y]")
+    (let [input (get-input "y")]
+      (if (= "y" input)
+        (prompt-rows)
+        (do
+          (println "Bye!")
+          (System/exit 0))))))
+
+(defn prompt-empty-peg
+  [board]
+  (println "Here's your board:")
+  (print-board board)
+  (println "Remove which peg? [e]")
+  (prompt-move (remove-peg board (letter->pos (get-input "e")))))
+
+(defn prompt-rows
+  []
+  (println "How many rows? [5]")
+  (let [rows (Integer. (get-input 5))
+        board (new-board rows)]
+    (prompt-empty-peg board)))
+
+(defn -main
+  [& args]
+  (println "Get ready to play peg thing!")
+  (prompt-rows))
 ;;;; ---------------------------------------------------------------------------
 ;;;; ---------------------------------------------------------------------------

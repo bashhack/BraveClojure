@@ -1,4 +1,4 @@
-;; Clojure Exercises 2 (from Chapter 4, Clojure For The Brave And True)
+;; Clojure Exercises 2 (from Chapter 4, 'Core Functions in Depth')
 
 ; ------------------------------------------------------------------------------
 

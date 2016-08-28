@@ -1,4 +1,4 @@
-;; Clojure Exercises (from Chapter 3, Clojure For The Brave And True)
+;; Clojure Exercises (from Chapter 3, 'Do Things: A Clojure Crash Course')
 
 ; ------------------------------------------------------------------------------
 
