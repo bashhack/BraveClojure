@@ -114,3 +114,171 @@ metal-genres
 ;;;; ---------------------------------------------------------------------------
 ;;;; Creating and Switching Betwen Namespaces
 ;;;; ---------------------------------------------------------------------------
+
+;;; We can create a new namespace in one of three ways:
+
+(create-ns 'metal.nu)
+; => #namespace[metal.nu]
+
+;;; IMPORTANT: We're likely to never really use or find much benefit in
+;;; `create-ns`, much like the nu-metal genre itself. The function creates
+;;; a new name space and does not move into it.
+
+(in-ns 'metal.funk)
+; => #namespace[metal.funk]
+
+;;; Unlike the function `create-ns`, the function `in-ns` creates and then
+;;; moves into the newly created namespace.
+
+;;; Finally, there's the `ns` macro which is the msot widely used of the three
+;;; tools, but we'll cover that later....
+
+(in-ns 'metal.pirate)
+(def ales ["stout" "porter" "cider"])
+(in-ns 'metal.speed)
+
+ales
+; => CompilerException java.lang.RuntimeException: Unable to resolve symbol:
+;    ales in this context, compiling:(*cider-repl localhost*:1:7308)
+
+metal.pirate/ales
+; => ["stout" "porter" "cider"]
+
+;;; When we want to reference objects in other namespaces, it can be a pain to
+;;; write the fully qualified name every time, so thankfully we have tools:
+;;; `refer` and `alias`
+
+(in-ns 'metal.pirate)
+(def ales ["stout" "porter" "cider"])
+(def meats ["bear" "narwhal" "polar bear"])
+(in-ns 'metal.speed)
+(clojure.core/refer 'metal.pirate)
+
+meats
+; => ["bear" "narwhal" "polar bear"]
+
+ales
+; => ["stout" "porter" "cider"]
+
+;;; We can also use filters like `:only`, `:exclude`, and `:rename`
+
+(clojure.core/refer 'metal.pirate :only ['ales])
+
+ales
+; => ["stout" "porter" "cider"]
+
+meats
+; => CompilerException java.lang.RuntimeException: Unable to resolve symbol:
+;    meats in this context, compiling:(*cider-repl localhost*:1:7308)
+
+(clojure.core/refer 'metal.pirate :exclude ['ales])
+
+ales
+; => CompilerException java.lang.RuntimeException: Unable to resolve symbol:
+;    ales in this context, compiling:(*cider-repl localhost*:1:7308)
+
+meats
+; => ["beat" "narwhal" "polar bear"]
+
+(clojure.core/refer 'metal.pirate :rename {'ales 'tasty-ales})
+
+ales
+; => CompilerException java.lang.RuntimeException: Unable to resolve symbol:
+;    ales in this context, compiling:(*cider-repl localhost*:1:7308)
+
+tasty-ales
+; => ["stout" "porter" "cider"]
+
+;;; Well, wait a second...this isn't really what we want is it? Having to yet
+;;; again refer to the fully qualified names - thankfully a call to
+;;; `clojure.core/refer-clojure` will allow us to only write `refer`
+
+(in-ns 'metal.death)
+(clojure.core/refer-clojure)
+(refer 'metal.speed)
+
+ales
+; => ["stout" "porter" "cider"]
+
+meats
+; => ["beat" "narwhal" "polar bear"]
+
+;;; Boy, wouldn't it be nice if we didn't have to write `metal.death` or
+;;; `metal.funk` each time we refered to the namespace? Yeah, it would!
+
+;;; This is where `alias` comes to the rescue:
+
+(in-ns 'metal.speed)
+(clojure.core/alias 'pirate 'metal.pirate)
+
+pirate/ales
+; => ["stout" "porter" "cider"]
+
+;;;; ---------------------------------------------------------------------------
+;;;; Organizing A Real Project
+;;;; ---------------------------------------------------------------------------
+
+;;; NOTE: My test project to practice configuring a new Clojure project can
+;;; be found under the project directory 'Hunt-For-The-Thief-Who-Stole-Rock'
+
+;;; The basic project directory structure after running `lein new app ...`
+;;; looks like this:
+
+;;; .gitignore
+;;; doc/
+;;;   intro.md
+;;; project.clj
+;;; README.md
+;;; LICENSE
+;;; CHANGELOG.md
+;;; resources/
+;;; src/
+;;;   hunt_for_the_thief_who_stole_rock/
+;;;     core.clj
+;;; test/
+;;;   hunt_for_the_thief_who_stole_rock/
+;;;     core_test.clj
+
+;;; At the top of core.clj, we see:
+(ns hunt-for-the-thief-who-stole-rock.core
+  (:gen-class))
+
+;;; This is the direct usage of the `ns` macro we referred to before...
+;;; Here, a namespace is created with the fully qualified name
+;;; #hunt-for-the-thief-who-stole-rock/core (hunt-for-the-thief-who-stol-rock.core)
+
+;;; IMPORTANT:
+;;; The name to the left of the `.` in a namespace corresponds to a directory!
+;;;
+;;; So, 'hunt-for-the-thief-who-stole-rock.core' is:
+;;;
+;;; hunt_for_the_thief_who_stole_rock/
+;;;   core.clj
+;;;
+;;; Let's create another namespace:
+;;; hunt-for-the-thief-who-stole-rock.visualization.svg
+;;;
+;;; hunt_for_the_thief_who_stole_rock/
+;;;   visualize/
+;;;     svg.clj
+
+;;; Having added code to our svg.clj, and required it in core.clj, after
+;;; running `lein run` we now see the nREPL print out:
+;;; 60.17,24.94 48.15,17.11 48.14,11.58 50.45,30.52
+
+;;; Let's change our require statement from:
+(require 'hunt-for-the-thief-who-stole-rock.visualization.svg)
+
+;;; ...to...
+(:require [hunt-for-the-thief-who-stole-rock.visualization.svg
+           :as svg
+           :refer [points]])
+;;; ...or...
+(:require [hunt-for-the-thief-who-stole-rock.visualization.svg :as svg])
+;;; NOTE: We would then use svg/points in our main function
+
+;;; Project continues, see final in directory....
+
+;;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
