@@ -170,3 +170,70 @@ java.lang.Math/PI
 
 ; -----------------------------------------------------------------------------
 ; Commonly Used Java Classes
+
+;; ----------------
+;; The System Class
+
+;; The `System` class is useful for interacting with the environment the program
+;; is running in. It can be used for env variables, I/O, and error output.
+
+;; The most useful functions are:
+;; `exit`, `getenv` and `getProperty`
+
+;; --------------
+;; The Date Class
+
+;; Java has great tools for working with dates - one of which is the
+;; `java.util.Date` class, whose online API docs are here:
+;; http://docs.oracle.com/javase/7/docs/api/java/util/Date.html
+
+;; The main takeaways from the `date` class are:
+;; (1) you can represent dates as literals using a form like:
+#inst "2016-09-19T20:40:02.733-00:00"
+;; (2) you have to use the `java.util.DateFormat` class if you want to
+;; customize how you convert dates to strings or convert strings to dates
+;; (3) if you need to perform tasks like comparing dates or add minutes,
+;; hours, or other units of time to a date, use the clj-time library:
+;; https://github.com/clj-time/clj-time
+
+; -----------------------------------------------------------------------------
+; Files and I/O
+
+;; Java I/O isn't exactly easy or straightforward - Clojure makes it simpler.
+;; https://clojure.github.io/clojure/clojure.java.io-api.html
+
+;; Java splits its IO classes, `java.io.BufferedReader`, `java.io.FileReader`,
+;; `java.io.BufferedWriter`, `java.io.FileWriter`, etc each with their own
+;; implementations of methods like `read`, `close`, `append`, `write`, `flush`,
+;; etc. - there's enough here to get yourself into trouble if not careful.
+
+;; Meanwhile, in Clojure, we reduce this complexity to:
+;; `spit` which writes to a resource, and
+;; `slurp` which reads from one
+
+(spit "/tmp/hercules-todo-list"
+"- kill dat lion brov
+- chop up what nasty nasty multi-headed snake thing")
+
+(slurp "/tmp/hercules-todo-list")
+; => "- kill dat lion brov
+; =>  - chop up what nasty multi-headed snake thing"
+
+;; The `with-open` macro is also helpful - as it automatically closes a resource
+;; at the end of its body, ensuring that we don't tie up resources by forgetting
+;; to manually close the resource.
+
+;; The `reader` function is also useful as an alternative to `slurp` when
+;; we don't want to try to read the resource in full and don't want to
+;; sort out which Java class we need to use.
+
+;; We can combine these with the `line-seq` function to read one line at a time:
+
+(with-open [todo-list-rdr (clojure.java.io/reader "/tmp/hercules-todo-list")]
+  (println (first (line-seq todo-list-rdr))))
+; => - kill dat lion brov
+
+;; For more on IO in Clojure, it can be helpful to refer back to:
+;; https://clojure.github.io/clojure/clojure.java.io-api.html
+;; https://docs.oracle.com/javase/7/docs/api/java/nio/file/package-summary.html
+;; and, http://docs.oracle.com/javase/7/docs/api/java/io/package-summary.html
